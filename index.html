@@ -1,279 +1,480 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL // LAKUNING_GENI_LABORATORY</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LAKUNING GENI // FILOSOFI WETON</title>
     <style>
-        /* --- CORE CONFIGURATION & THEMING --- */
-        :root {
-            --bg-color: #0a0a0a;
-            --text-primary: #00ff66;
-            --text-dim: #005522;
-            --border-style: 1px solid #00ff66;
-            --font-stack: 'Courier New', Courier, monospace;
+        /* --- CORE BASE & CANVAS STYLING --- */
+        body, html {
+            margin: 0; padding: 0; background-color: #0a0505; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; -webkit-tap-highlight-color: transparent; 
+        }
+        canvas {
+            width: 100vw; height: 100vh; object-fit: contain; 
+            image-rendering: -moz-crisp-edges; image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges; image-rendering: pixelated; touch-action: none; 
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            background-color: transparent;
+        /* --- START OVERLAY (Audio Context Unlocker) --- */
+        #start-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 5, 5, 0.95); z-index: 99999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer;
+        }
+        #start-btn { 
+            padding: 20px 40px; border: 1px solid #ff4500; color: #ff6347; 
+            font-family: monospace; background: transparent; cursor: pointer; font-size: 20px; 
+            box-shadow: 0 0 15px rgba(255, 69, 0, 0.3); transition: all 0.3s ease;
+        }
+        #start-btn:hover { background: #ff4500; color: #000; box-shadow: 0 0 25px rgba(255, 69, 0, 0.6); }
+        .start-subtitle { color: #8f9593; font-family: monospace; font-size: 12px; margin-top: 15px; letter-spacing: 2px; }
+
+        /* --- HEADER NAVIGATION & CHAT TOGGLE --- */
+        .lang-link {
+            position: fixed; top: 21px; right: 125px; z-index: 99999; 
+            color: #ff6347; font-family: monospace; font-size: 12px; 
+            text-decoration: none; border-bottom: 1px dashed #ff4500;
+        }
+        #chat-toggle-btn {
+            position: absolute; top: 15px; right: 15px; z-index: 10002;
+            background: #1a0808; color: #ff6347; border: 1px solid #ff4500;
+            padding: 6px 12px; font-family: monospace; font-size: 12px;
+            cursor: pointer; border-radius: 4px;
+        }
+        #chat-toggle-btn:hover { background: #ff4500; color: #000; }
+
+        /* --- SLIDE-OUT CHAT INTERFACE --- */
+        #chat-ui {
+            position: absolute; top: 55px; right: 15px; width: 280px;
+            background: rgba(20, 10, 10, 0.95); color: #e0e5e5;
+            border: 1px solid #ff4500; font-family: monospace; font-size: 11px;
+            z-index: 10002; display: none; flex-direction: column;
+            border-radius: 4px; box-sizing: border-box; pointer-events: auto;
+        }
+        .chat-header {
+            padding: 8px; border-bottom: 1px dashed #ff4500;
+            display: flex; justify-content: space-between; color: #ff6347;
+        }
+        #chat-messages {
+            height: 180px; overflow-y: auto; padding: 8px;
+            display: flex; flex-direction: column; gap: 6px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .message { border-left: 2px solid #ff4500; padding-left: 6px; word-wrap: break-word; }
+        .message-user { color: #ff6347; font-weight: bold; }
+        .message-text { color: #e0e5e5; margin-top: 2px; }
+        .chat-input-area { display: flex; border-top: 1px dashed #ff4500; }
+        #chat-input { flex: 1; background: transparent; border: none; color: #e0e5e5; padding: 8px; font-family: monospace; outline: none; }
+        #chat-send { background: #1a0808; color: #ff6347; border: none; border-left: 1px solid #ff4500; padding: 0 12px; cursor: pointer; font-family: monospace; font-weight: bold; }
+        #chat-send:hover { background: #ff4500; color: #000; }
+
+        /* --- PROXIMITY NARRATIVE BUBBLE (Centered Modal) --- */
+        #text-bubble {
+            position: absolute; display: none; 
+            background: rgba(20, 10, 10, 0.95); color: #e0e5e5; 
+            padding: 20px; border: 1px solid #ff4500; font-family: monospace; 
+            font-size: 12px; left: 50%; top: 50%;
+            transform: translate(-50%, -50%); max-width: 600px; width: 80%;
+            max-height: 60vh; overflow-y: auto; pointer-events: auto !important; 
+            z-index: 10000 !important; border-radius: 4px; box-sizing: border-box;
+            -webkit-overflow-scrolling: touch; box-shadow: 0 0 20px rgba(255, 69, 0, 0.2);
+            line-height: 1.5;
+        }
+        #text-bubble a { color: #ff6347; text-decoration: underline; }
+
+        /* --- MOBILE D-PAD CONTROLS --- */
+        #dpad {
+            position: absolute; bottom: 20px; left: 20px; width: 120px; height: 120px;
+            display: grid; grid-template-columns: 40px 40px 40px; grid-template-rows: 40px 40px 40px;
+            gap: 2px; opacity: 0.4; z-index: 10001; user-select: none; -webkit-user-select: none; 
+            touch-action: none; pointer-events: none; 
+        }
+        .dpad-btn {
+            background-color: #1a0808; color: #ff6347; border: 2px solid #2b0f0f;
+            font-family: monospace; font-size: 16px; font-weight: bold; display: flex;
+            justify-content: center; align-items: center; cursor: pointer;
+            box-sizing: border-box; border-radius: 4px; pointer-events: auto; 
+        }
+        .dpad-btn:active, .dpad-btn.active { background-color: #ff4500; color: #000; opacity: 1.0; }
+        #btn-up { grid-column: 2; grid-row: 1; }
+        #btn-left { grid-column: 1; grid-row: 2; }
+        #btn-right { grid-column: 3; grid-row: 2; }
+        #btn-down { grid-column: 2; grid-row: 3; }
+
+        /* --- FOOTER / PARTNER LOGOS --- */
+        #partners {
+            position: absolute; bottom: 10px; right: 20px; 
+            display: flex; gap: 15px; align-items: center; z-index: 50; pointer-events: auto;
         }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            font-family: var(--font-stack);
-            font-size: 14px;
-            line-height: 1.4;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            overflow: hidden;
-            padding: 15px;
+        @media (max-width: 600px) {
+            #chat-ui { width: calc(100% - 30px); left: 15px; right: 15px; }
+            #partners { display: none; }
         }
-
-        /* --- SCANLINE & GLITCH AESTHETIC --- */
-        body::before {
-            content: " ";
-            display: block;
-            position: fixed;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 9999;
-            background-size: 100% 4px, 3px 100%;
-            pointer-events: none;
-        }
-
-        /* --- UTILITIES --- */
-        a {
-            color: var(--text-primary);
-            text-decoration: none;
-            border: var(--border-style);
-            padding: 2px 6px;
-        }
-        a:hover {
-            background-color: var(--text-primary);
-            color: var(--bg-color);
-        }
-
-        /* --- HEADER MATRIX --- */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: var(--border-style);
-            padding-bottom: 8px;
-            margin-bottom: 10px;
-        }
-        .meta-tags span {
-            margin-right: 15px;
-            font-weight: bold;
-        }
-        .lang-switch {
-            font-size: 12px;
-        }
-
-        /* --- CENTRAL VIEWPORT (CANVAS & LOGS) --- */
-        main {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            min-height: 0;
-        }
-
-        #viewport-canvas {
-            width: 100%;
-            flex-grow: 1;
-            border: var(--border-style);
-            background-color: #000;
-        }
-
-        #terminal-log {
-            height: 120px;
-            border: var(--border-style);
-            padding: 8px;
-            overflow-y: auto;
-            font-size: 12px;
-            color: var(--text-primary);
-            background-color: #050505;
-        }
-
-        /* --- D-PAD INTERACTIVE CLUSTER --- */
-        .controls-wrapper {
-            display: flex;
-            justify-content: center;
-            margin: 15px 0;
-        }
-
-        .d-pad {
-            display: grid;
-            grid-template-columns: repeat(3, 45px);
-            grid-template-rows: repeat(3, 45px);
-            gap: 5px;
-        }
-
-        .d-btn {
-            border: var(--border-style);
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 18px;
-            user-select: none;
-        }
-
-        .d-btn:active, .d-btn.active {
-            background-color: var(--text-primary);
-            color: var(--bg-color);
-        }
-
-        .d-up    { grid-column: 2; grid-row: 1; }
-        .d-left  { grid-column: 1; grid-row: 2; }
-        .d-right { grid-column: 3; grid-row: 2; }
-        .d-down  { grid-column: 2; grid-row: 3; }
-
-        /* --- FOOTER / PARTNER NODE MATRIX --- */
-        footer {
-            border-top: var(--border-style);
-            padding-top: 10px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .partner-node {
-            max-height: 35px;
-            filter: grayscale(1) brightness(1.5) contrast(2);
-            opacity: 0.6;
-            transition: opacity 0.2s ease;
-        }
-
-        .partner-node:hover {
-            opacity: 1;
-            filter: none;
-        }
+        @media (min-width: 800px) { #dpad { opacity: 0.25; } }
     </style>
 </head>
 <body>
 
-    <!-- 1. TRANSMISSION HEADER -->
-    <header>
-        <div class="meta-tags">
-            <span>[ TRANSMIT // LAKUNING_GENI ]</span>
-            <span id="system-status">[INIT_OK]</span>
-        </div>
-        <div class="lang-switch">
-            <a href="#" id="lang-toggle">WETON_SYS</a>
-        </div>
-    </header>
+    <!-- 1. START OVERLAY -->
+    <div id="start-overlay">
+        <button id="start-btn">MASUKI JALUR API</button>
+        <div class="start-subtitle">// FILOSOFI LAKUNING GENI</div>
+    </div>
+    
+    <!-- 2. LANGUAGE TOGGLE / CHAT TRIGGER -->
+    <a href="#" class="lang-link">[ID]</a>
+    <button id="chat-toggle-btn">[ DISKUSI ]</button>
 
-    <!-- 2. SYSTEM ENGINE VIEWPORT -->
-    <main>
-        <!-- The primary visualization node (Noise / Graphics) -->
-        <canvas id="viewport-canvas"></canvas>
-        
-        <!-- The narrative/code syntax console output -->
-        <div id="terminal-log">
-            SYSTEM KERNEL INITIALIZED: WETON_LAKUNING_GENI.<br>
-            Use D-PAD [UP / DOWN / LEFT / RIGHT] to navigate archives, metadata, and metaphorical parameters...
+    <!-- 3. LIVE CHAT PANEL -->
+    <div id="chat-ui">
+        <div class="chat-header">
+            <span>[ REFLEKSI // BARA_01 ]</span>
+            <span id="chat-status">[INIT]</span>
         </div>
-    </main>
-
-    <!-- 3. DIRECTIONAL INTERACTION INTERFACE -->
-    <div class="controls-wrapper">
-        <div class="d-pad">
-            <div class="d-btn d-up" data-dir="UP">▲</div>
-            <div class="d-btn d-left" data-dir="LEFT">◀</div>
-            <div class="d-btn d-right" data-dir="RIGHT">▶</div>
-            <div class="d-btn d-down" data-dir="DOWN">▼</div>
+        <div id="chat-messages"></div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Tulis refleksi..." autocomplete="off">
+            <button id="chat-send">KIRIM</button>
         </div>
     </div>
+    
+    <!-- 4. NARRATIVE POPUP BUBBLE & GAME CANVAS -->
+    <div id="text-bubble"></div>
+    <canvas id="gameCanvas"></canvas>
 
-    <!-- 4. STERILIZED PARTNER BRANDING LOG MATRIX -->
-    <footer>
-        <a href="#" target="_blank"><span class="node-label">[NODE_01: DEFINISI]</span></a>
-        <a href="#" target="_blank"><span class="node-label">[NODE_02: METAFORA]</span></a>
-        <a href="#" target="_blank"><span class="node-label">[NODE_03: NEPTU_8]</span></a>
-    </footer>
+    <!-- 5. ON-SCREEN D-PAD -->
+    <div id="dpad">
+        <div id="btn-up" class="dpad-btn">▲</div>
+        <div id="btn-left" class="dpad-btn">◀</div>
+        <div id="btn-right" class="dpad-btn">▶</div>
+        <div id="btn-down" class="dpad-btn">▼</div>
+    </div>
 
-    <!-- 5. LIGHTWEIGHT RUNTIME INSTANCE -->
+    <!-- 6. BRAND / PARTNER FOOTER -->
+    <div id="partners">
+        <span style="color:#552222; font-family:monospace; font-size:10px;">[WETON // JAVANESE_METAPHYSICS]</span>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- GAME ENGINE LOGIC                                                 -->
+    <!-- ================================================================= -->
     <script>
-        const canvas = document.getElementById('viewport-canvas');
+        const bgm = new Audio('https://github.com/defn-networks/muted-forest-wonokromo-karnivulgar/raw/main/ags_project-8-bit-219384.mp3'); 
+        const stepSound = new Audio('https://github.com/defn-networks/muted-forest-wonokromo-karnivulgar/raw/main/footstep%20on%20concrete%204.mp3'); 
+        bgm.loop = true;
+        bgm.volume = 0.3;
+
+        let hasStarted = false;
+        document.getElementById('start-btn').addEventListener('click', () => {
+            document.getElementById('start-overlay').style.display = 'none';
+            bgm.play().catch(e => console.log("Audio play blocked:", e));
+            hasStarted = true;
+        });
+        
+        const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const logWindow = document.getElementById('terminal-log');
+        const bubble = document.getElementById('text-bubble');
 
-        // Database content mapping for D-pad navigation
-        const databaseArchive = {
-            UP: {
-                title: "ARCHIVE_01 // DEFINISI & KARAKTER",
-                text: "LAKUNING GENI: Berjalannya api. Energi kuat, bersemangat, tegas, berani, & mudah memancarkan pengaruh. Memiliki kemauan keras dan intensitas tinggi, namun bermuka dua: bisa menghangatkan atau membakar jika emosi tak terkendali."
-            },
-            LEFT: {
-                title: "ARCHIVE_02 // METAFORA KEADAAN",
-                text: "SIMBOLISME KONDISI:\n- Api Liar: Cepat menyala -> cepat bereaksi -> sulit berhenti -> melukai -> menyesal.\n- Api Terjaga: Tetap panas/hangat -> terarah -> memberi cahaya & tenaga -> bertahan lama. Ketenangan bukan berarti kehilangan api."
-            },
-            RIGHT: {
-                title: "ARCHIVE_03 // BAHAN BAKAR & DESTRUKSI",
-                text: "BAHAN BAKAR ENERGI: Sangat produktif jika punya tujuan jelas, keyakinan, tantangan, & ruang berekspresi. Destruktif jika tanpa saluran: berubah jadi frustrasi, overthink, ledakan emosi, atau kelelahan karena terus 'menyala'."
-            },
-            DOWN: {
-                title: "ARCHIVE_04 // TAFSIR NEPTU 8 & BARA",
-                text: "NEPTU 8 ('Cilik kaitane, gedhe pungkasane'): Dampak akhir bisa besar dari hal kecil. Menyimpan/memendam sesuatu hingga menjadi bara. Api tidak selalu berkobar; kadang ia berupa bara tenang yang siap menyala bila diberi oksigen."
-            }
-        };
-
-        // Dynamically size canvas inside its CSS limits
-        function resizeCanvas() {
-            canvas.width = canvas.clientWidth;
-            canvas.height = canvas.clientHeight;
-            renderNoise();
-        }
-
-        // Generate raw digital noise texture inside the workspace matrix
-        function renderNoise() {
-            const imgData = ctx.createImageData(canvas.width, canvas.height);
-            const data = imgData.data;
-            for (let i = 0; i < data.length; i += 4) {
-                const noise = Math.random() > 0.5 ? 40 : 0; 
-                data[i] = noise;       
-                data[i+1] = noise + 20; 
-                data[i+2] = noise;     
-                data[i+3] = 255;       
-            }
-            ctx.putImageData(imgData, 0, 0);
-        }
-
-        // Loop background noise displacement to simulate systemic instability
-        setInterval(() => {
-            if(canvas.width > 0) renderNoise();
-        }, 120);
-
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        // Bind interactive D-pad controls directly to state pipeline
-        document.querySelectorAll('.d-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const direction = e.target.getAttribute('data-dir');
-                executeSystemAction(direction);
+        ['mousedown', 'click', 'touchstart'].forEach(eventType => {
+            bubble.addEventListener(eventType, (e) => {
+                if (e.target.tagName === 'A') {
+                    e.stopPropagation();
+                    if(eventType === 'click') window.open(e.target.href, '_blank');
+                }
             });
         });
 
-        function executeSystemAction(action) {
-            const timestamp = new Date().toLocaleTimeString();
-            const record = databaseArchive[action];
-            
-            if (record) {
-                logWindow.innerHTML += `<br><br>[${timestamp}] VECTOR: [${record.title}]<br>> ${record.text.replace(/\n/g, '<br>> ')}`;
-                logWindow.scrollTop = logWindow.scrollHeight;
+        let GAME_WIDTH = 320; let GAME_HEIGHT = 180; let WORLD_WIDTH = 1440; 
+
+        function resizeCanvas() {
+            const screenAspect = window.innerWidth / window.innerHeight;
+            const baseAspect = 16 / 9;
+            if (screenAspect > baseAspect) {
+                GAME_HEIGHT = 180; GAME_WIDTH = Math.floor(GAME_HEIGHT * screenAspect);
+            } else {
+                GAME_WIDTH = 320; GAME_HEIGHT = 180;
             }
+            canvas.width = GAME_WIDTH; canvas.height = GAME_HEIGHT;
+            WORLD_WIDTH = Math.max(1440, GAME_WIDTH * 4);
+        }
+        window.addEventListener('resize', resizeCanvas); 
+        resizeCanvas();
+
+        // --- NARRATIVE PROXIMITY ZONES (LAKUNING GENI) ---
+        const textZones = [
+            { 
+                x: 150, 
+                html: "<b>01 // HAKIKAT LAKUNING GENI</b><br><br>Secara harfiah berarti 'berjalannya api'. Primbon menggambarkan sifat ini sebagai energi yang kuat, bersemangat, tegas, berani, dan mudah memancarkan pengaruh ke lingkungan sekitar. Orang dengan watak ini memiliki kemauan keras dan tidak mudah menyerah." 
+            },
+            { 
+                x: 450, 
+                html: "<b>02 // DUA SISI API</b><br><br>Seperti api yang menghangatkan sekaligus membakar, watak ini punya dua sisi. Ia bisa memberi semangat dan perlindungan, namun apabila emosi tak terkendali, ia mudah tersulut dan keras dalam bersikap. Tantangannya adalah menjaga agar api tetap menjadi cahaya, bukan sesuatu yang melukai." 
+            },
+            { 
+                x: 750, 
+                html: "<b>03 // API LIAR VS API TERJAGA</b><br><br><b>Api Liar:</b> Cepat menyala → cepat bereaksi → sulit berhenti → melukai → menyesal.<br><br><b>Api Terjaga:</b> Tetap panas/hangat → terarah → memberikan cahaya dan tenaga → mampu bertahan lama. Kematangan berarti membuat api berguna tanpa kehilangan daya hidup." 
+            },
+            { 
+                x: 1050, 
+                html: "<b>04 // BAHAN BAKAR & PRODUKTIVITAS</b><br><br>Api sangat bergantung pada bahan bakarnya. Energi lakuning geni sangat produktif saat memiliki tujuan jelas, keyakinan, tantangan tepat, atau ruang berekspresi. Sebaliknya, ia menjadi destruktif saat terkurung—berubah menjadi overthink, frustrasi, atau ledakan emosi." 
+            },
+            { 
+                x: 1300, 
+                html: "<b>05 // CILIK KAITANE, GEDHE PUNGKASANE</b><br><br>Neptu 8 dikaitkan dengan ungkapan bahwa awalnya kecil tapi dampak akhirnya besar. Api tak selalu berkobar; kadang ia berupa bara kecil di dalam diam yang menyimpan intensitas besar.<br><br><a href='https://id.wikipedia.org/wiki/Weton' target='_blank'>[ Pelajari Lebih Lanjut ]</a>" 
+            }
+        ];
+
+        // --- COLOR PALETTE ---
+        const colors = {
+            sky: '#0a0505', path: '#1a0d0d', pathLine: '#331a1a',
+            structure: '#140808', accent: '#ff4500',
+            skin: '#e8b59b', hair: '#cc2200', shirt: '#111111', skirt: '#111111'
+        };
+
+        // --- PIXEL ART SPRITE: WANITA RAMBUT MERAH, BAJU & ROK HITAM ---
+        const characterSprite = [
+            "  HHHH  ", 
+            " HHHHHH ", 
+            " HHSSHH ", 
+            "  SSSS  ", 
+            "  TTTT  ", 
+            " TTTTTT ", 
+            "  RRRR  ", 
+            "  RRRR  ", 
+            "  R  R  ", 
+            "  R  R  "
+        ];
+        const spriteColors = { 
+            'H': colors.hair, 
+            'S': colors.skin, 
+            'T': colors.shirt, 
+            'R': colors.skirt 
+        };
+
+        function drawSprite(spriteData, startX, startY, colorMap) {
+            for (let row = 0; row < spriteData.length; row++) {
+                for (let col = 0; col < spriteData[row].length; col++) {
+                    const char = spriteData[row][col];
+                    if (char !== ' ') {
+                        ctx.fillStyle = colorMap[char];
+                        ctx.fillRect(Math.floor(startX + col), Math.floor(startY + row), 1, 1);
+                    }
+                }
+            }
+        }
+
+        // State Machine Variables
+        const player = { x: 50, y: 150, speed: 1.5, dx: 0, dy: 0 };
+        let activeZone = null; let stepCounter = 0; let cameraX = 0;
+        const keys = { w: false, a: false, s: false, d: false };
+
+        // Keyboard Event Binds
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'w' || e.key === 'ArrowUp') keys.w = true;
+            if (e.key === 'a' || e.key === 'ArrowLeft') keys.a = true;
+            if (e.key === 's' || e.key === 'ArrowDown') keys.s = true;
+            if (e.key === 'd' || e.key === 'ArrowRight') keys.d = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'w' || e.key === 'ArrowUp') keys.w = false;
+            if (e.key === 'a' || e.key === 'ArrowLeft') keys.a = false;
+            if (e.key === 's' || e.key === 'ArrowDown') keys.s = false;
+            if (e.key === 'd' || e.key === 'ArrowRight') keys.d = false;
+        });
+
+        // Touch Control Binds
+        function setupTouchButton(buttonId, keyName) {
+            const btn = document.getElementById(buttonId);
+            const press = (e) => { e.preventDefault(); keys[keyName] = true; btn.classList.add('active'); };
+            const release = (e) => { e.preventDefault(); keys[keyName] = false; btn.classList.remove('active'); };
+            
+            btn.addEventListener('touchstart', press, { passive: false });
+            btn.addEventListener('touchend', release, { passive: false });
+            btn.addEventListener('touchcancel', release, { passive: false });
+            btn.addEventListener('mousedown', press);
+            btn.addEventListener('mouseup', release);
+            btn.addEventListener('mouseleave', release);
+        }
+        setupTouchButton('btn-up', 'w'); setupTouchButton('btn-left', 'a');
+        setupTouchButton('btn-down', 's'); setupTouchButton('btn-right', 'd');
+
+        // --- ENVIRONMENT RENDERING LAYERS ---
+        function drawBackground() {
+            ctx.fillStyle = colors.sky; ctx.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
+            ctx.fillStyle = colors.structure; 
+            ctx.fillRect(120, 50, 180, 80);
+            ctx.fillRect(420, 30, 220, 100);
+            ctx.fillRect(720, 45, 190, 85);
+            ctx.fillRect(1020, 25, 240, 105);
+
+            // Efek siluet bara/api latar belakang tipis
+            ctx.fillStyle = '#1a0808';
+            ctx.fillRect(150, 120, 30, 10);
+            ctx.fillRect(780, 120, 40, 10);
+        }
+
+        function drawWalkway() {
+            ctx.fillStyle = colors.path; ctx.fillRect(0, 130, WORLD_WIDTH, 50);
+            ctx.fillStyle = colors.pathLine; ctx.fillRect(0, 140, WORLD_WIDTH, 1);
+        }
+
+        // --- MAIN GAME LOOP ---
+        function update() {
+            if (hasStarted) {
+                player.dy = keys.w ? -player.speed : (keys.s ? player.speed : 0);
+                player.dx = keys.a ? -player.speed : (keys.d ? player.speed : 0);
+
+                if (player.dx !== 0 || player.dy !== 0) {
+                    stepCounter++;
+                    if (stepCounter > 20) { stepSound.play().catch(()=>{}); stepCounter = 0; }
+                }
+                
+                player.x += player.dx; player.y += player.dy;
+                
+                if (player.x < 0) player.x = 0;
+                if (player.x > WORLD_WIDTH - 8) player.x = WORLD_WIDTH - 8;
+                if (player.y < 120) player.y = 120; 
+                if (player.y > GAME_HEIGHT - 10) player.y = GAME_HEIGHT - 10;
+            }
+
+            cameraX = player.x - GAME_WIDTH / 2;
+            if (cameraX < 0) cameraX = 0;
+            if (cameraX > WORLD_WIDTH - GAME_WIDTH) cameraX = WORLD_WIDTH - GAME_WIDTH;
+
+            ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            ctx.save();
+            ctx.translate(-cameraX, 0); 
+            
+            drawBackground(); 
+            drawWalkway();
+            drawSprite(characterSprite, player.x, player.y, spriteColors);
+
+            let foundZone = textZones.find(z => Math.abs(player.x - z.x) < 40);
+            if (foundZone) {
+                if (activeZone !== foundZone) {
+                    bubble.style.display = 'block';
+                    bubble.innerHTML = foundZone.html;
+                    activeZone = foundZone;
+                }
+            } else if (activeZone !== null) {
+                bubble.style.display = 'none';
+                activeZone = null;
+            }
+            
+            ctx.restore(); 
+            requestAnimationFrame(update);
+        }
+        
+        update();
+    </script>
+
+    <!-- ================================================================= -->
+    <!-- OPTIONAL: FIREBASE REALTIME CHAT ENGINE                           -->
+    <!-- ================================================================= -->
+    <script type="importmap">
+    {
+        "imports": {
+            "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+            "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "firebase/app";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "firebase/firestore";
+
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "0000000000",
+            appId: "1:0000000000:web:000000000000"
+        };
+
+        const chatUi = document.getElementById("chat-ui");
+        const toggleBtn = document.getElementById("chat-toggle-btn");
+        const chatMessagesDiv = document.getElementById("chat-messages");
+        const chatInput = document.getElementById("chat-input");
+        const chatSend = document.getElementById("chat-send");
+        const chatStatus = document.getElementById("chat-status");
+
+        toggleBtn.addEventListener('click', () => {
+            if (chatUi.style.display === 'flex') {
+                chatUi.style.display = 'none';
+                toggleBtn.innerText = '[ DISKUSI ]';
+            } else {
+                chatUi.style.display = 'flex';
+                toggleBtn.innerText = '[ TUTUP ]';
+                chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+            }
+        });
+
+        ['mousedown', 'touchstart'].forEach(type => {
+            chatUi.addEventListener(type, e => e.stopPropagation());
+            toggleBtn.addEventListener(type, e => e.stopPropagation());
+        });
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            let currentUser = null;
+
+            signInAnonymously(auth).catch(() => chatStatus.innerText = "[OFFLINE]");
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    chatStatus.innerText = "[ONLINE]";
+                    
+                    const q = query(collection(db, "lakuning_geni_chat"), orderBy("timestamp", "asc"));
+                    onSnapshot(q, (snapshot) => {
+                        chatMessagesDiv.innerHTML = "";
+                        snapshot.forEach((doc) => {
+                            const data = doc.data();
+                            const messageEl = document.createElement("div");
+                            messageEl.classList.add("message");
+                            const userName = "jiwa_" + data.uid.slice(-4);
+                            messageEl.innerHTML = `
+                                <div class="message-user">${escapeHtml(userName)}</div>
+                                <div class="message-text">${escapeHtml(data.text)}</div>
+                            `;
+                            chatMessagesDiv.appendChild(messageEl);
+                        });
+                        chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+                    });
+                }
+            });
+
+            const sendMessage = async () => {
+                const text = chatInput.value.trim();
+                if (!text || !currentUser) return;
+                try {
+                    await addDoc(collection(db, "lakuning_geni_chat"), {
+                        text: text,
+                        uid: currentUser.uid,
+                        timestamp: serverTimestamp()
+                    });
+                    chatInput.value = "";
+                } catch (err) { console.error(err); }
+            };
+
+            chatSend.addEventListener("click", sendMessage);
+            chatInput.addEventListener("keypress", (e) => { if (e.key === "Enter") sendMessage(); });
+
+        } catch(e) {
+            chatStatus.innerText = "[OFFLINE]";
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
         }
     </script>
 </body>
