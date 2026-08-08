@@ -227,31 +227,36 @@
             }
         ];
 
-        // --- COLOR PALETTE ---
+        // --- CUSTOMIZE HERE: COLOR PALETTE (Disesuaikan dengan Gambar) ---
         const colors = {
-            sky: '#0a0505', path: '#1a0d0d', pathLine: '#331a1a',
-            structure: '#140808', accent: '#ff4500',
-            skin: '#e8b59b', hair: '#cc2200', shirt: '#111111', skirt: '#111111'
+            sky: '#0a0a0a', skyDark: '#1a1a1a', path: '#2b2b2b', pathLine: '#333333',
+            structure: '#1e1e1e', accent: '#00ff66',
+            // Warna Karakter dari Gambar
+            skin: '#fcdbc3',    // Warna Kulit
+            hair: '#cc3333',    // Warna Rambut Merah
+            dress: '#ffffff',   // Warna Gaun Putih
+            shoes: '#f0f0f0'    // Warna Sepatu Putih
         };
 
-        // --- PIXEL ART SPRITE: WANITA RAMBUT MERAH, BAJU & ROK HITAM ---
+        // --- CUSTOMIZE HERE: PIXEL ART SPRITE MATRIX (Disesuaikan dengan Gambar) ---
+        // H=Hair, S=Skin, D=Dress, s=shoes
         const characterSprite = [
             "  HHHH  ", 
             " HHHHHH ", 
             " HHSSHH ", 
             "  SSSS  ", 
-            "  TTTT  ", 
-            " TTTTTT ", 
-            "  RRRR  ", 
-            "  RRRR  ", 
-            "  R  R  ", 
-            "  R  R  "
+            " DDDDDD ", 
+            " DDDDDD ", 
+            " DDDDDD ", 
+            "  DDDD  ", 
+            "  ss  ss  ", 
+            "  ss  ss  "
         ];
         const spriteColors = { 
             'H': colors.hair, 
             'S': colors.skin, 
-            'T': colors.shirt, 
-            'R': colors.skirt 
+            'D': colors.dress, 
+            's': colors.shoes 
         };
 
         function drawSprite(spriteData, startX, startY, colorMap) {
